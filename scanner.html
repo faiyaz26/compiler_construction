@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<!-- Developed By Ahmad Faiyaz -->
+<body>
+
+Code:<br>
+<textarea id="myTextarea" rows="10" cols="50">
+</textarea>
+
+<button type="button" onclick="compile()">Compile</button>
+
+<br>
+<textarea id ="output" rows="10" cols="50">
+
+</textarea>
+<script>
+function compile()
+{
+	var x = document.getElementById("myTextarea").value;
+	var box = document.getElementById("output");
+	box.value = "";
+	var lines = x.split('\n');
+	var ifon = 0;
+	for (var i = 0; i < lines.length; i++) {
+		lines[i] = lines[i].replace(/ /g,'');
+		console.log(lines[i]);
+		var ifpat = /^if\((\d+|[a-zA-Z]+)(\+(\d+|[a-zA-Z]+))?\)$/;
+		var isint = /^(\d+)$/;
+		var isid = /^([a-zA-Z]+)$/;
+		var iscomplxexpr = /^(\d+|[a-zA-Z]+)\+(\d+|[a-zA-Z]+)$/;
+		var asgn = /^([a-zA-Z]+)=(\d+|[a-zA-Z]+)(\+(\d+|[a-zA-Z]+))?;$/;
+		var out=new Array();
+		if(ifon==1){
+			if(asgn.test(lines[i])){
+				var x = asgn.exec(lines[i]);
+				out.push("ID("+x[1]+")");
+				out.push("EQUAL");
+				if(isid.test(x[2])){
+					out.push("ID("+x[2]+")");
+				}else{
+					out.push("INT("+x[2]+")");
+				}
+				out.push("SEMICOLON");
+			}else{
+				box.value+="Error at line "+(i+1);
+				break;
+			}
+			var o = "line "+(i+1)+":";
+			for(var j = 0; j < out.length;j++){
+				o += " ";
+				o +=out[j];
+			}
+			o+="\n";
+			box.value += o;
+			ifon = 0;
+			continue;
+		}
+		if(ifpat.test(lines[i])){
+			out.push("IF");
+			ifon = 1;
+			out.push("LPAR");
+			var x = ifpat.exec(lines[i]);
+			console.log(x);
+			for (var j = 0; j < x.length; j++) {
+				console.log(x[j]);
+				if((typeof x[j] == 'undefined')){
+					break;
+				}
+				if(j==2){
+					out.push("ADD");
+				}
+				if(isid.test(x[j])){
+					out.push("ID("+x[j]+")");
+				}else if(isint.test(x[j])){
+					out.push("INT("+x[j]+")");
+				}
+			}
+			out.push("RPAR");
+		}else if(isint.test(lines[i])){
+			var id = lines[i].replace(isint, "$1");
+			out.push("INT("+id+")");
+			console.log("INT("+id+")");
+		}else if(isid.test(lines[i])){
+			var id = lines[i].replace(isid, "$1");
+			out.push("ID("+id+")");
+			console.log("ID("+id+")");
+		}else if(iscomplxexpr.test(lines[i])){
+			console.log("Complex");
+			var x = iscomplxexpr.exec(lines[i]);
+			for (var j = 1; j < x.length; j++) {
+				if(j==2){
+					out.push("ADD");
+				}
+				if(isid.test(x[j])){
+					out.push("ID("+x[j]+")");
+				}else if(isint.test(x[j])){
+					out.push("INT("+x[j]+")");
+				}
+			}
+		}else if(asgn.test(lines[i])){
+			console.log("ASssign");
+			var x = asgn.exec(lines[i]);
+			console.log(x);
+			out.push("ID("+x[1]+")");
+			out.push("EQUAL");
+			for (var j = 2; j < x.length; j++) {
+				if((typeof x[j] == 'undefined')){
+					break;
+				}
+				if(j==3){
+					out.push("ADD");
+				}
+				if(isid.test(x[j])){
+					out.push("ID("+x[j]+")");
+				}else if(isint.test(x[j])){
+					out.push("INT("+x[j]+")");
+				}
+			}
+			out.push("SEMICOLON");
+		}else{
+			box.value+="Error at line "+(i+1);
+			break;
+		}
+		var o = "line "+(i+1)+":";
+		for(var j = 0; j < out.length;j++){
+			o += " ";
+			o +=out[j];
+		}
+		o+="\n";
+		box.value += o;
+    }
+}
+</script>
+
+</body>
+</html>
