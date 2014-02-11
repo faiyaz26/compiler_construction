@@ -53,10 +53,7 @@
 			<div class="col-md-4">
 				<div class="panel panel-default">
 					<div class="panel-heading">Identifiers with values</div>
-					<div class="panel-body">
-						<textarea id ="idval" class="form-control" rows="10">
-
-						</textarea>
+					<div class="panel-body" id = "idval">
 					</div>
 				</div>
 
@@ -68,16 +65,16 @@
 				<div class="panel-heading">This scanner follows these rules</div>
 				<div class="panel-body">
 					<p class="text-info">
-				program ::= statement | program statement </br>
-				statement ::= assignStmt | ifStmt </br>
-				assignStmt ::= id = expr ; </br>
-				ifStmt ::= if ( expr ) stmt </br>
-				expr ::= id | int </br>
-				id ::= (any number of lowercase and uppercase english alpahbets) </br>
-				int ::= (any number of digits) </br>
-			</p>
-		</div>
-	</div>
+						program ::= statement | program statement </br>
+						statement ::= assignStmt | ifStmt </br>
+						assignStmt ::= id = expr ; </br>
+						ifStmt ::= if ( expr ) stmt </br>
+						expr ::= id | int </br>
+						id ::= (any number of lowercase and uppercase english alpahbets) </br>
+						int ::= (any number of digits) </br>
+					</p>
+				</div>
+			</div>
 			
 		</div>
 	</div>
@@ -87,35 +84,74 @@
 		var x = document.getElementById("myTextarea").value;
 		var box = document.getElementById("output");
 		box.value = "";
+		var token = document.getElementById("tokens");
+		token.value = "";
+		var idval = document.getElementById("idval");
+		idval.value = "";
 		var lines = x.split('\n');
 		var ifon = 0;
+		var ident = new Array();
+		var val = new Array();
 		for (var i = 0; i < lines.length; i++) {
-			lines[i] = lines[i].replace(/ /g,'');
+			lines[i] = lines[i].replace(/\s+/g, "");;
 			console.log(lines[i]);
 			var ifpat = /^if\((\d+|[a-zA-Z]+)(\+(\d+|[a-zA-Z]+))?\)$/;
 			var isint = /^(\d+)$/;
 			var isid = /^([a-zA-Z]+)$/;
 			var iscomplxexpr = /^(\d+|[a-zA-Z]+)\+(\d+|[a-zA-Z]+)$/;
 			var asgn = /^([a-zA-Z]+)=(\d+|[a-zA-Z]+)(\+(\d+|[a-zA-Z]+))*;$/;
+			var asgnval = /^([a-zA-Z]+)=(\d+|[a-zA-Z]+(\+\d+|[a-zA-Z]+)*);$/;
 			var out=new Array();
+			var tokens = new Array();
+			
+			var sofar = "";
+			for(var j=0;j<lines[i].length ; j++){
+				if((lines[i][j]>='a' && lines[i][j]<='z') || (lines[i][j]>='A' && lines[i][j]<='Z') || (lines[i][j]>='0' && lines[i][j]<='9')){
+					sofar += lines[i][j];
+				}else{
+					if(sofar.length > 0) tokens.push(sofar);
+					//console.log("sda "+sofar);
+					tokens.push(lines[i][j]);
+					sofar = "";
+				}
+			}
+			
+			if(sofar.length > 0) tokens.push(sofar);
+			var o = "line "+(i+1)+":";
+			for(var j = 0; j < tokens.length;j++){
+			    //console.log(tokens[j]);
+			    o += " ";
+			    o +=tokens[j];
+			}
+			o+="\n";
+			token.value += o;
+			
 			if(ifon==1){
 				if(asgn.test(lines[i])){
 					var x = asgn.exec(lines[i]);
 					out.push("ID("+x[1]+")");
 					out.push("EQUAL");
+					var sofar = "";
 					for (var j = 2; j < x.length; j++) {
 						if((typeof x[j] == 'undefined')){
 							break;
 						}
 						if(j%2){
 							out.push("ADD");
+							sofar+="+";
 						}
 						if(isid.test(x[j])){
 							out.push("ID("+x[j]+")");
+							ident.push(x[j]);
+							val.push("-");
+							sofar+=x[j];
 						}else if(isint.test(x[j])){
 							out.push("INT("+x[j]+")");
+							sofar+=x[j];
 						}
 					}
+					ident.push(x[1]);
+					val.push(sofar);
 					out.push("SEMICOLON");
 				}else{
 					box.value+="Error at line "+(i+1);
@@ -147,6 +183,8 @@
 					}
 					if(isid.test(x[j])){
 						out.push("ID("+x[j]+")");
+						ident.push(x[j]);
+						val.push("-");
 					}else if(isint.test(x[j])){
 						out.push("INT("+x[j]+")");
 					}
@@ -176,23 +214,30 @@
 			}else if(asgn.test(lines[i])){
 				console.log("Assign");
 				var x = asgn.exec(lines[i]);
-				console.log(x);
+				//console.log(x);
 				out.push("ID("+x[1]+")");
 				out.push("EQUAL");
+				var sofar = "";
 				for (var j = 2; j < x.length; j++) {
 					if((typeof x[j] == 'undefined')){
 						break;
 					}
 					if(j%2){
 						out.push("ADD");
+						sofar+="+";
 					}
 					if(isid.test(x[j])){
 						out.push("ID("+x[j]+")");
+						ident.push(x[j]);
+						val.push("-");
+						sofar+=x[j];
 					}else if(isint.test(x[j])){
 						out.push("INT("+x[j]+")");
+						sofar+=x[j];
 					}
 				}
-				out.push("SEMICOLON");
+				ident.push(x[1]);
+				val.push(sofar);
 			}else{
 				box.value+="Error at line "+(i+1);
 				break;
@@ -204,10 +249,30 @@
 			}
 			o+="\n";
 			box.value += o;
+
+			
 		}
 		if(ifon){
 			box.value+="Error!! If statement is not complete";
 		}
+		idval.innerHTML = "";
+		var o = '<table class="table table-hover">';
+		o += "<thead>";
+		o += "<th> identifers Name </th> <th> value </th> </thead>";
+		o += "<tbody>";
+		for(var j = 0; j < ident.length;j++){
+			o += "<tr>"
+			o += "<th>"
+			o += ident[j];
+			o += "</th>"
+			o += "<th>"
+			o += val[j];
+			o += "</th>"
+			o += "</tr>"
+		}
+		o += "</tbody>";
+		o+= "</table>"
+		idval.innerHTML += o;
 	}
 	</script>
 </body>
